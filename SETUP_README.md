@@ -134,9 +134,13 @@ If you run out of memory:
 
 ### Python Version Issues
 
-This code requires Python 3.6.5 or compatible. If you have version conflicts:
+This code requires Python 3.6.5 or compatible. If you have version conflicts or lack sudo permissions:
 ```bash
-python3.6 -m venv venv
+# Install virtualenv without sudo
+python3 -m pip install --user virtualenv
+
+# Create environment with virtualenv
+python3 -m virtualenv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```

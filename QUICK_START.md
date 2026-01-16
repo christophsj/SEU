@@ -100,7 +100,8 @@ Total for all experiments: **30-60 minutes**
 ### Setup Issues
 ```bash
 # If environment setup fails
-python3 -m venv venv --clear
+python3 -m pip install --user virtualenv
+python3 -m virtualenv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt

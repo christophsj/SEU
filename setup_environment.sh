@@ -8,29 +8,39 @@ echo "SEU Entity Alignment - Environment Setup"
 echo "=================================================="
 
 # Check Python version
-echo -e "\n[1/4] Checking Python version..."
+echo -e "\n[1/5] Checking Python version..."
 python3 --version
 
+# Install virtualenv if not available (no sudo needed)
+echo -e "\n[2/5] Ensuring virtualenv is available..."
+if ! python3 -c "import virtualenv" 2>/dev/null; then
+    echo "Installing virtualenv to user directory..."
+    python3 -m pip install --user virtualenv
+    echo "virtualenv installed successfully."
+else
+    echo "virtualenv already available."
+fi
+
 # Create virtual environment
-echo -e "\n[2/4] Creating virtual environment..."
+echo -e "\n[3/5] Creating virtual environment..."
 if [ ! -d "venv" ]; then
-    python3 -m venv venv
+    python3 -m virtualenv venv
     echo "Virtual environment created successfully."
 else
     echo "Virtual environment already exists."
 fi
 
 # Activate virtual environment
-echo -e "\n[3/4] Activating virtual environment..."
+echo -e "\n[4/5] Activating virtual environment..."
 source venv/bin/activate
 
 # Install dependencies
-echo -e "\n[4/4] Installing Python dependencies..."
+echo -e "\n[5/5] Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
 # Download GloVe embeddings if not present
-echo -e "\n[5/5] Checking for GloVe embeddings..."
+echo -e "\n[6/6] Checking for GloVe embeddings..."
 if [ ! -f "glove.6B.300d.txt" ]; then
     echo "Downloading GloVe embeddings (this may take a while)..."
     if command -v wget &> /dev/null; then

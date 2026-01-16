@@ -1,7 +1,7 @@
-tensorflow==2.4.1
-numpy==1.19.5
-scipy==1.5.4
-numba==0.53.1
-tqdm==4.62.3
-jupyter==1.0.0
-notebook==6.4.5
+tensorflow>=2.5.0,<2.16
+numpy>=1.19.5
+scipy>=1.5.4
+numba>=0.53.1
+tqdm>=4.62.3
+jupyter>=1.0.0
+notebook>=6.4.5

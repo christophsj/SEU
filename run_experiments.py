@@ -19,7 +19,39 @@ import sys
 
 # Configuration
 SEED = 12345
-DATASETS = ["dbp_fr_en", "dbp_ja_en", "dbp_zh_en", "srprs_de_en", "srprs_fr_en"]
+
+
+# Auto-detect available datasets by matching translated entity names with KG folders
+def get_available_datasets():
+    """Find datasets that have both KG data and translated entity names"""
+    kg_dirs = [d for d in os.listdir("KGs") if os.path.isdir(f"KGs/{d}")]
+    translated_files = [
+        f.replace(".json", "")
+        for f in os.listdir("translated_ent_name")
+        if f.endswith(".json")
+    ]
+
+    # Map KG folders to translated entity name files
+    dataset_mapping = {
+        "fr_en": "dbp_fr_en",
+        "ja_en": "dbp_ja_en",
+        "zh_en": "dbp_zh_en",
+        "EN_DE_15K_V2": "en_de_15k_v2",
+        "EN_FR_15K_V2": "en_fr_15k_v2",
+        "D_W_15K_V2": "d_w_15k_v2",
+        "D_Y_15K_V2": "d_y_15k_v2",
+    }
+
+    datasets = []
+    for kg_dir in kg_dirs:
+        trans_name = dataset_mapping.get(kg_dir)
+        if trans_name and trans_name in translated_files:
+            datasets.append((kg_dir, trans_name))
+
+    return datasets
+
+
+DATASETS = get_available_datasets()
 FEATURE_MODES = ["word-level", "char-level", "hybrid-level"]
 GRAPH_DEPTH = 2
 NUM_RUNS = 3
@@ -188,16 +220,19 @@ def run_sinkhorn(sims, batch_size=1024):
     }
 
 
-def run_single_experiment(dataset_name, feature_mode, word_vecs, run_num):
+def run_single_experiment(
+    dataset_kg_path, dataset_trans_name, feature_mode, word_vecs, run_num
+):
     """Run a single experiment for a dataset"""
     print(f"\n{'='*80}")
     print(
-        f"Dataset: {dataset_name} | Mode: {feature_mode} | Run: {run_num + 1}/{NUM_RUNS}"
+        f"Dataset: {dataset_kg_path} | Mode: {feature_mode} | Run: {run_num + 1}/{NUM_RUNS}"
     )
     print(f"{'='*80}")
 
     results = {
-        "dataset": dataset_name,
+        "dataset": dataset_kg_path,
+        "translated_name": dataset_trans_name,
         "feature_mode": feature_mode,
         "run": run_num + 1,
         "timestamp": datetime.now().isoformat(),
@@ -205,11 +240,11 @@ def run_single_experiment(dataset_name, feature_mode, word_vecs, run_num):
 
     try:
         # Load entity names
-        ent_names_path = f"translated_ent_name/{dataset_name}.json"
+        ent_names_path = f"translated_ent_name/{dataset_trans_name}.json"
         ent_names = json.load(open(ent_names_path, "r"))
 
         # Load KGs and test set
-        file_path = f"KGs/{dataset_name}/"
+        file_path = f"KGs/{dataset_kg_path}/"
         all_triples, node_size, rel_size = load_triples(file_path, True)
         train_pair, test_pair = load_aligned_pair(file_path, ratio=0)
 
@@ -288,10 +323,10 @@ def run_all_experiments(feature_mode="hybrid-level"):
 
     all_results = []
 
-    for dataset_name in DATASETS:
+    for dataset_kg_path, dataset_trans_name in DATASETS:
         for run_num in range(NUM_RUNS):
             result = run_single_experiment(
-                dataset_name, feature_mode, word_vecs, run_num
+                dataset_kg_path, dataset_trans_name, feature_mode, word_vecs, run_num
             )
             all_results.append(result)
 
@@ -317,9 +352,11 @@ def save_results(results):
 
     # Calculate and save summary statistics
     summary = {}
-    for dataset in DATASETS:
+    for dataset_kg_path, dataset_trans_name in DATASETS:
         dataset_results = [
-            r for r in results if r["dataset"] == dataset and r["status"] == "success"
+            r
+            for r in results
+            if r["dataset"] == dataset_kg_path and r["status"] == "success"
         ]
         if dataset_results:
             # Hungarian stats
@@ -329,7 +366,7 @@ def save_results(results):
             sinkhorn_hits10 = [r["sinkhorn"]["hits@10"] for r in dataset_results]
             sinkhorn_mrr = [r["sinkhorn"]["MRR"] for r in dataset_results]
 
-            summary[dataset] = {
+            summary[dataset_kg_path] = {
                 "runs": len(dataset_results),
                 "hungarian": {
                     "hits@1_mean": np.mean(hungarian_hits1),
@@ -379,7 +416,9 @@ if __name__ == "__main__":
     print("=" * 80)
     print("SEU Entity Alignment - Automated Experiment Runner")
     print("=" * 80)
-    print(f"Datasets: {', '.join(DATASETS)}")
+    print(f"Detected datasets: {len(DATASETS)}")
+    for kg_path, trans_name in DATASETS:
+        print(f"  - {kg_path} (using {trans_name} translations)")
     print(f"Feature mode: hybrid-level")
     print(f"Runs per dataset: {NUM_RUNS}")
     print(f"Graph depth: {GRAPH_DEPTH}")

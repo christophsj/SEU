@@ -40,7 +40,7 @@ conda activate seu_env
 
 # Install CUDA toolkit and cuDNN via conda
 echo -e "\n[4/6] Installing CUDA toolkit 11.2 and cuDNN..."
-conda install -c conda-forge cudatoolkit=11.2 cudnn=8.1.0 -y
+conda install -c nvidia -c conda-forge cudatoolkit=11.2 cudnn=8.1.0 -y
 
 # Install dependencies
 echo -e "\n[5/6] Installing Python dependencies..."
